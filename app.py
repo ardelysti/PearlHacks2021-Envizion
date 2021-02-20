@@ -25,22 +25,25 @@ storage = firebase.storage()
 @app.route('/',methods=['GET','POST'])
 def login():
     message = ""
-    if request.method == 'POST':
-        print("reached post method")
-        email = request.form['email']
-        password = request.form['pass']
-        try:
-            user = auth.sign_in_with_email_and_password(email,password)
-            user = auth.refresh(user['refreshToken'])
-            #user_id = user['idToken']
-            #session['user'] = user_id
-            session['user'] = email
-            return redirect(url_for('user'))
-            #return render_template('login.html',message=message)
-        except:
-            message = "Incorrect Password!"
-
-    return render_template('login.html',message=message)
+    try:
+        # check if user logged in
+        session['user']
+        return redirect(url_for('user'))
+    except KeyError:
+        # user not logged in/token expired
+        if request.method == 'POST':
+            email = request.form['email']
+            password = request.form['pass']
+            try:
+                user = auth.sign_in_with_email_and_password(email,password)
+                user = auth.refresh(user['refreshToken'])
+                user_id = user['idToken']
+                session['user'] = user_id
+                return redirect(url_for('user'))
+                #return render_template('login.html',message=message)
+            except:
+                message = "Incorrect Password!"
+        return render_template('login.html',message=message)
 
 @app.route('/signup',methods=['GET','POST'])
 def signup():
@@ -58,11 +61,16 @@ def signup():
 
 @app.route('/user')
 def user():
-    if 'user' in session:
+    try:
         user = session['user']
         return f"<h1>{user}</h1>"
-    else:
+    except KeyError:
         return redirect(url_for('login'))
+
+@app.route('/logout')
+def logout():
+    session.pop("user", None)
+    return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=False,host='0.0.0.0',port=int(os.environ.get('PORT', 8080)))

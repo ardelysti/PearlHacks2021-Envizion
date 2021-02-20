@@ -9,11 +9,8 @@
 <body class="full-screen flex-center">
   <h1 class="text-xl">Login</h1>
 
-    {% if s %}
-        <h3>{{ s }}</h3>
-    {% endif %}
-    {% if us %}
-        <h3>{{ us }}</h3>
+    {% if message != "" %}
+        <h3>{{ message }}</h3>
     {% endif %}
     <form action="/" method="post">
         <input type="email" name="email">

@@ -20,26 +20,31 @@ firebaseConfig = {
 firebase = pyrebase.initialize_app(firebaseConfig)
 auth = firebase.auth()
 db = firebase.database()
+storage = firebase.storage()
 
 @app.route('/',methods=['GET','POST'])
 def login():
-    successful = "Login successful!"
-    unsuccessful = "Login failed!"
+    message = ""
     if request.method == 'POST':
         print("reached post method")
         email = request.form['email']
         password = request.form['pass']
         try:
-            auth.sign_in_with_email_and_password(email,password)
-            return render_template('login.html',s=successful)
+            user = auth.sign_in_with_email_and_password(email,password)
+            user = auth.refresh(user['refreshToken'])
+            #user_id = user['idToken']
+            #session['user'] = user_id
+            session['user'] = email
+            return redirect(url_for('user'))
+            #return render_template('login.html',message=message)
         except:
-            return render_template('login.html',us=unsuccessful)
+            message = "Incorrect Password!"
 
-    return render_template('login.html')
+    return render_template('login.html',message=message)
 
 @app.route('/signup',methods=['GET','POST'])
 def signup():
-    successful = "User created! Please Login"
+    successful = "Sign up Succes! Please login"
     unsuccessful = "Failed! Please try again"
     if request.method == 'POST':
         email = request.form['email']
@@ -50,6 +55,14 @@ def signup():
         except:
             return render_template('signup.html',us=unsuccessful)
     return render_template('signup.html')
+
+@app.route('/user')
+def user():
+    if 'user' in session:
+        user = session['user']
+        return f"<h1>{user}</h1>"
+    else:
+        return redirect(url_for('login'))
 
 if __name__ == '__main__':
     app.run(debug=False,host='0.0.0.0',port=int(os.environ.get('PORT', 8080)))
